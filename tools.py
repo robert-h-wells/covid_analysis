@@ -38,7 +38,7 @@ def get_data(fils):
 #=============================================================================================================#
 
 #=============================================================================================================#
-def fit_function(func,xdata,ydata,namer):
+def fit_function(func,xdata,ydata):
 
   popt, pcov = (curve_fit(func, xdata, ydata,maxfev = 100400)) 
   fit_val = np.zeros(int(np.size(popt)))

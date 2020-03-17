@@ -1,4 +1,4 @@
-#=======================================================================================#
+#======================================================================================================#
 import sys
 import os
 import csv
@@ -13,120 +13,160 @@ from itertools import repeat
 
 import plots as pl
 import tools as tl
-#=======================================================================================#
-
+#======================================================================================================#
+# lists that will be used by the full program
 confirmed_data = []
 death_data = []
 recovery_data = []
-tl.get_data([confirmed_data,death_data,recovery_data])
-
-sizer = np.shape(confirmed_data) ; print(sizer)
-#print(confirmed_data[0])
-
-# sort by countries
 country_list = []
-for i in range(1,sizer[0]):
-    namer = confirmed_data[i][1]
-    if namer not in country_list:
-        country_list.append(namer)
 
-print(np.size(country_list))
-num_countries = np.size(country_list)
-country_rates = np.zeros((num_countries,sizer[1]-4))
-for i in range(num_countries):
-    for j in range(1,sizer[0]):
-        if country_list[i] == confirmed_data[j][1]:
-            for k in range(4,sizer[1]):
-                country_rates[i,k-4] += float(confirmed_data[j][k])
-
-wanted = ["China","US","Italy"]  # ["Italy","US","Germany","Korea, South"]  
+wanted = ["China","US","Italy","Germany","Korea, South"]  
+wanted_num = np.size(wanted)
 wanted_pop = [1401710720.,329431067.,60252824.,83149300.,51780579.]
 wanted_pop_density = [418.,200.,200.,233.,517.]
-wanted_index = np.zeros(np.size(wanted))
-
-wanted_fit_param = np.zeros((np.size(wanted),3))
+wanted_index = [0]*wanted_num
+wanted_fit_param = np.zeros((wanted_num,3))
 
 # actual China pop density 145, but will use an average of south, east and central
 # actual US pop density 34, but will use number for city pop density
 
-#====================================== solve for parameters ======================================#
-for i in range(num_countries):
-    if country_list[i] in wanted:
-        num = wanted.index(country_list[i])
-        wanted_index[num] = i
-        legend = country_list[i]
-        for j in range(np.size(country_rates[i,:])):  # set start time to be at > 200 infections
-            if country_rates[i,j] > 200.:
-                val = j
-                break
-        x = np.array(range(np.size(country_rates[i,:])-j)) ; y = np.array(country_rates[i,j:])
-        popt = tl.fit_function(pl.logistic,x,y/wanted_pop_density[num],legend)
-        wanted_fit_param[num,:] = popt
-#==================================================================================================#
+#======================================================================================================#
+def get_country_index(num_countries):
 
-print(wanted_index)
-print(wanted_fit_param)
-
-#wanted_fit_param[:,0] = wanted_fit_param[0,0]
-wanted_fit_param[1:,1] = wanted_fit_param[0,1]/3.
-#wanted_fit_param[:,2] = wanted_fit_param[0,2]
-
-
-fig, ax = plt.subplots()
-for i in range(np.size(wanted)):
-        legend = wanted[i]
-        if 1==1: # shift time to where day 0 has > 100 confirmed cases
-            for j in range(np.size(country_rates[i,:])):
-                if country_rates[i,j] > 200.:
-                    val = j
-                    break
-            x = np.array(range(np.size(country_rates[wanted_index[i],:])-j)) ; y = np.array(country_rates[wanted_index[i],j:])
-        pl.scatter_plot(x,(y)/wanted_pop_density[i],['Confirmed Cases','Days','Num Affected',legend],'.')
-        num_sim = 40
-        modelPredictions = pl.logistic((range(num_sim)), *wanted_fit_param[num,:])   # *wanted_pop_density[num]
-        pl.scatter_plot(range(num_sim),modelPredictions,['Confirmed Cases','Days','Num Affected',legend],'-')
-
-plt.show()
-
-
-if 1==0:
     for i in range(num_countries):
-        #if country_rates[i,-1] > 800:
         if country_list[i] in wanted:
             num = wanted.index(country_list[i])
-            legend = country_list[i]
-            if 1==0:  # actual dates
-                x = np.array(range(sizer[1]-4)) ; print(np.size(x)) ; x = np.ma.masked_equal(x,0.0) ; print(np.size(x))
-                y = np.array(country_rates[i,:]) ; y = np.ma.masked_equal(y,0.0)
-            if 1==1: # shift time to where day 0 has > 100 confirmed cases
-                for j in range(np.size(country_rates[i,:])):
-                    if country_rates[i,j] > 200.:
-                        val = j
-                        break
-                x = np.array(range(np.size(country_rates[i,:])-j)) ; y = np.array(country_rates[i,j:])
-            #pl.scatter_plot(x,(y)/wanted_pop_density[num],['Confirmed Cases','Days','Num Affected',legend],'.')
-            #pl.scatter_fit_plot(pl.logistic,(x),(y),['Confirmed Cases','Days','Num Affected (log10)',legend])
-            #pl.scatter_fit_plot(pl.logistic,(x),(y)/wanted_pop_density[num],['Confirmed Cases','Days','Num Affected per Population Density',legend])
-            popt = tl.fit_function(pl.logistic,x,y/wanted_pop_density[num],legend)
-            wanted_fit_param[num,:] = popt
-            num_sim = 40
-            modelPredictions = pl.logistic((range(num_sim)), *popt)   # *wanted_pop_density[num]
-            #pl.scatter_plot(range(num_sim),modelPredictions,['Confirmed Cases','Days','Num Affected',legend],'-')
+            wanted_index[num] = i
+#======================================================================================================#
+def get_fit_param(x,y,namer):
 
-    #plt.show()
+    for i in range(np.shape(x)[0]):
+        popt = tl.fit_function(namer,x[i],y[i])
+        wanted_fit_param[i,:] = popt
+#======================================================================================================#
+def get_countries(num):
+
+    for i in range(1,num):
+        namer = confirmed_data[i][1]
+        if namer not in country_list:
+            country_list.append(namer)
+#======================================================================================================#
+def get_country_rates(num_countries,entries,num_days,country_rates):
+
+    for i in range(num_countries):
+        for j in range(1,entries):
+            if country_list[i] == confirmed_data[j][1]:
+                for k in range(4,num_days+4):  # offset by other data in file
+                    country_rates[i,k-4] += float(confirmed_data[j][k])
+
+    return country_rates
+#======================================================================================================#
+def get_same_start(country_rates,num_days,val):
+
+    rates_resize = []
+
+    for i in range(wanted_num):
+        for j in range(num_days):
+            if country_rates[wanted_index[i],j] > val:
+                num = j
+                break
+
+        x_resize = np.array(range(num_days-num))
+        y_resize = np.array(country_rates[wanted_index[i],num:])
+        rates_resize.append([x_resize,y_resize])
+
+    return(rates_resize)
+#======================================================================================================#
+def main():
+
+    type_val = [1,1]  # [0] 1-show confirmed plots 2- show extrapolated plots, [1] - show state plots
+
+    # read in data from csv file
+    tl.get_data([confirmed_data,death_data,recovery_data])
+
+    # size constants of files   ~~~ will need to make larger for all 3 files
+    sizer = np.shape(confirmed_data) ; print(sizer)
+    entries = sizer[0]
+    num_days = sizer[1]-4   # first 4 columns are state,country,lat,long
+
+    # sort data by countries 
+    get_countries(entries)
+    #print(country_list)
+
+    num_countries = np.size(country_list)
+    country_rates = np.zeros((num_countries,num_days))   # will make this a 3 dim vector for other dat
+
+    # find the rates in each country per day
+    country_rates = get_country_rates(num_countries,entries,num_days,country_rates)
+
+    # determine index of wanted countries from total array
+    get_country_index(num_countries)
+
+    # resize data to start at similar times
+    rates_resize = get_same_start(country_rates,num_days,200)
+
+    # find the fit parameters for the wanted countries
+    x = [lis[0] for lis in rates_resize]
+    y = [lis[1] for lis in rates_resize]
+
+    for i in range(np.size(y)):    # scale rate by pop density
+        y[i] = y[i] #/ wanted_pop_density[i]
+
+    get_fit_param(x,y,pl.logistic)
+    print(wanted_fit_param) ; print(wanted_index)
+
+    # plot wanted data with extrapolation fit
+    if type_val[0] > 0:
+        fig, ax = plt.subplots()
+        for i in range(len(wanted)):
+            title = ['Confirmed Cases','Days','Num Affected',wanted[i]]
+            pl.scatter_plot((x[i]),y[i],title,'-')
+            if type_val[0] == 2:
+                num_sim = 40
+                modelPredictions = pl.logistic((range(num_sim)), *wanted_fit_param[i,:])
+                pl.scatter_plot(range(num_sim),modelPredictions,title,'-')
+        plt.show()
+
+    # get state / province data
+    state_list = []
+    for i in range(entries):
+        if confirmed_data[i][1] =='US': # US
+            if ',' not in confirmed_data[i][0]:
+                if confirmed_data[i][0] not in state_list: 
+                    state_list.append([confirmed_data[i][0],i,(confirmed_data[i][4:])])
+    
+    # removing cruises
+    i = 0
+    while i < len(state_list):
+        if ' Princess' in state_list[i][0]:
+            print(state_list[i][0])
+            state_list.remove(state_list[i])
+            i -= 1
+        i += 1
+
+    state_list_resize = get_same_start(country_rates,num_days,1)
+
+    sorted_state_list = sorted(state_list,key=lambda l:float(l[2][-1]), reverse=True)
+
+    if type_val[1] == 1:
+        fig, ax = plt.subplots()
+        for i in range(10): 
+            title = ['Confirmed Cases','Days','Num Affected',sorted_state_list[i][0]]
+            x = range(num_days)
+            y = np.array(sorted_state_list[i][2], dtype=np.float) #/ wanted_pop_density[1]
+            pl.scatter_plot(x,y,title,'-')
+        plt.show()
 
 
-if 1==0:
-    fig, ax = plt.subplots()
-    for i in range(sizer[0]):
-        if confirmed_data[i][1] =='US':
-            vals = np.array([int(i) for i in confirmed_data[i][4:]])
-            legend = str(confirmed_data[i][0])+','+str(confirmed_data[i][1])
-            pl.scatter_plot(range(sizer[1]-4),vals,['Confirmed Cases','Days','Num Affected',legend])
 
-    plt.show()
-num = 0
-for i in range(sizer[0]):
-    if confirmed_data[i][1] =='US':
-        num += 1
-        #print(confirmed_data[i][0],confirmed_data[i][0][1])
+    # set manual fit parameters
+    #wanted_fit_param[:,0] = wanted_fit_param[0,0]
+    #wanted_fit_param[1:,1] = wanted_fit_param[0,1]/3.
+    #wanted_fit_param[:,2] = wanted_fit_param[0,2]
+
+#======================================================================================================#
+
+#================================#
+if __name__ == '__main__':
+  main()
+#================================#
