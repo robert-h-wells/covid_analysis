@@ -14,13 +14,15 @@ from itertools import repeat
 import plots as pl
 import tools as tl
 #======================================================================================================#
+type_val = [2,1]  # [0] 1-show confirmed plots 2- show extrapolated plots, [1] - show state plots
+
 # lists that will be used by the full program
 confirmed_data = []
 death_data = []
 recovery_data = []
 country_list = []
 
-wanted = ["China","US","Italy","Germany","Korea, South"]  
+wanted = ["China","US","Italy"]  # "Germany","Korea, South"
 wanted_num = np.size(wanted)
 wanted_pop = [1401710720.,329431067.,60252824.,83149300.,51780579.]
 wanted_pop_density = [418.,200.,200.,233.,517.]
@@ -56,6 +58,9 @@ def get_country_rates(num_countries,entries,num_days,country_rates):
     for i in range(num_countries):
         for j in range(1,entries):
             if country_list[i] == confirmed_data[j][1]:
+                #print(confirmed_data[j][0])
+                #if ',' not in confirmed_data[j][0]:
+                #print(confirmed_data[j][0]) 
                 for k in range(4,num_days+4):  # offset by other data in file
                     country_rates[i,k-4] += float(confirmed_data[j][k])
 
@@ -78,8 +83,6 @@ def get_same_start(country_rates,num_days,val):
     return(rates_resize)
 #======================================================================================================#
 def main():
-
-    type_val = [1,1]  # [0] 1-show confirmed plots 2- show extrapolated plots, [1] - show state plots
 
     # read in data from csv file
     tl.get_data([confirmed_data,death_data,recovery_data])
@@ -120,9 +123,9 @@ def main():
         fig, ax = plt.subplots()
         for i in range(len(wanted)):
             title = ['Confirmed Cases','Days','Num Affected',wanted[i]]
-            pl.scatter_plot((x[i]),y[i],title,'-')
+            pl.scatter_plot((x[i]),y[i],title,'.')
             if type_val[0] == 2:
-                num_sim = 40
+                num_sim = 50
                 modelPredictions = pl.logistic((range(num_sim)), *wanted_fit_param[i,:])
                 pl.scatter_plot(range(num_sim),modelPredictions,title,'-')
         plt.show()
@@ -131,9 +134,9 @@ def main():
     state_list = []
     for i in range(entries):
         if confirmed_data[i][1] =='US': # US
-            if ',' not in confirmed_data[i][0]:
-                if confirmed_data[i][0] not in state_list: 
-                    state_list.append([confirmed_data[i][0],i,(confirmed_data[i][4:])])
+            #if ',' not in confirmed_data[i][0]:
+            #    if confirmed_data[i][0] not in state_list: 
+            state_list.append([confirmed_data[i][0],i,(confirmed_data[i][4:])])
     
     # removing cruises
     i = 0
@@ -169,4 +172,5 @@ def main():
 #================================#
 if __name__ == '__main__':
   main()
+  #pl.us_map()
 #================================#
