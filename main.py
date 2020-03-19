@@ -14,7 +14,7 @@ from itertools import repeat
 import plots as pl
 import tools as tl
 #======================================================================================================#
-type_val = [2,1]  # [0] 1-show confirmed plots 2- show extrapolated plots, [1] - show state plots
+type_val = [1,1]  # [0] 1-show confirmed plots 2- show extrapolated plots, [1] - show state plots
 
 # lists that will be used by the full program
 confirmed_data = []
@@ -22,12 +22,16 @@ death_data = []
 recovery_data = []
 country_list = []
 
-wanted = ["China","US","Italy"]  # "Germany","Korea, South"
-wanted_num = np.size(wanted)
-wanted_pop = [1401710720.,329431067.,60252824.,83149300.,51780579.]
-wanted_pop_density = [418.,200.,200.,233.,517.]
+#wanted = ["China","US","Italy"]  # "Germany","Korea, South"
+#wanted_num = np.size(wanted)
+#wanted_pop = [1401710720.,329431067.,60252824.,83149300.,51780579.]
+#wanted_pop_density = [418.,200.,200.,233.,517.]
+#wanted_index = [0]*wanted_num
+#wanted_fit_param = np.zeros((wanted_num,3))
+
+wanted = []
+wanted_num = 0 # np.size(wanted)
 wanted_index = [0]*wanted_num
-wanted_fit_param = np.zeros((wanted_num,3))
 
 # actual China pop density 145, but will use an average of south, east and central
 # actual US pop density 34, but will use number for city pop density
@@ -58,9 +62,6 @@ def get_country_rates(num_countries,entries,num_days,country_rates):
     for i in range(num_countries):
         for j in range(1,entries):
             if country_list[i] == confirmed_data[j][1]:
-                #print(confirmed_data[j][0])
-                #if ',' not in confirmed_data[j][0]:
-                #print(confirmed_data[j][0]) 
                 for k in range(4,num_days+4):  # offset by other data in file
                     country_rates[i,k-4] += float(confirmed_data[j][k])
 
@@ -102,8 +103,25 @@ def main():
     # find the rates in each country per day
     country_rates = get_country_rates(num_countries,entries,num_days,country_rates)
 
+    sorted_country = []
+    for i in range(num_countries):
+        sorted_country.append([country_list[i],country_rates[i,:]])
+
+    sorted_country_list = sorted(sorted_country,key=lambda l:float(l[1][-1]), reverse=True)
+
+    wanted = []
+    for i in range(10):
+        wanted.append(sorted_country_list[i][0])
+
+    print('wanted',wanted)   
+    wanted_num = np.size(wanted)
+    wanted_index = [0]*wanted_num
+    wanted_fit_param = np.zeros((wanted_num,3))
+
     # determine index of wanted countries from total array
     get_country_index(num_countries)
+
+    print('index',wanted_index)
 
     # resize data to start at similar times
     rates_resize = get_same_start(country_rates,num_days,200)
@@ -134,8 +152,6 @@ def main():
     state_list = []
     for i in range(entries):
         if confirmed_data[i][1] =='US': # US
-            #if ',' not in confirmed_data[i][0]:
-            #    if confirmed_data[i][0] not in state_list: 
             state_list.append([confirmed_data[i][0],i,(confirmed_data[i][4:])])
     
     # removing cruises
@@ -160,17 +176,9 @@ def main():
             pl.scatter_plot(x,y,title,'-')
         plt.show()
 
-
-
-    # set manual fit parameters
-    #wanted_fit_param[:,0] = wanted_fit_param[0,0]
-    #wanted_fit_param[1:,1] = wanted_fit_param[0,1]/3.
-    #wanted_fit_param[:,2] = wanted_fit_param[0,2]
-
 #======================================================================================================#
 
 #================================#
 if __name__ == '__main__':
   main()
-  #pl.us_map()
 #================================#
