@@ -14,7 +14,7 @@ from itertools import repeat
 import plots as pl
 import tools as tl
 #======================================================================================================#
-type_val = [1,1]  # [0] 1-show confirmed plots 2- show extrapolated plots, [1] - show state plots
+type_val = [2,1]  # [0] 1-show confirmed plots 2- show extrapolated plots, [1] - show state plots
 
 # lists that will be used by the full program
 confirmed_data = []
@@ -22,16 +22,17 @@ death_data = []
 recovery_data = []
 country_list = []
 
-#wanted = ["China","US","Italy"]  # "Germany","Korea, South"
-#wanted_num = np.size(wanted)
+wanted = ["China","US","Italy"] #,"Germany","England","Spain"]
+wanted_num = np.size(wanted)
 #wanted_pop = [1401710720.,329431067.,60252824.,83149300.,51780579.]
 #wanted_pop_density = [418.,200.,200.,233.,517.]
-#wanted_index = [0]*wanted_num
-#wanted_fit_param = np.zeros((wanted_num,3))
-
-wanted = []
-wanted_num = 0 # np.size(wanted)
 wanted_index = [0]*wanted_num
+wanted_fit_param = np.zeros((wanted_num,3))
+
+#wanted = []
+#wanted_num = 0 # np.size(wanted)
+#wanted_index = []
+#wanted_fit_param = []
 
 # actual China pop density 145, but will use an average of south, east and central
 # actual US pop density 34, but will use number for city pop density
@@ -43,6 +44,16 @@ def get_country_index(num_countries):
         if country_list[i] in wanted:
             num = wanted.index(country_list[i])
             wanted_index[num] = i
+
+#def get_country_index(num_countries):
+#    print('here',wanted)
+#    print(num_countries)
+#
+#    for i in range(num_countries):
+#        print(i)
+#        if country_list[i] in wanted:
+#            num = wanted.index(country_list[i])
+#            wanted_index[num] = i
 #======================================================================================================#
 def get_fit_param(x,y,namer):
 
@@ -70,6 +81,7 @@ def get_country_rates(num_countries,entries,num_days,country_rates):
 def get_same_start(country_rates,num_days,val):
 
     rates_resize = []
+    print('same start',wanted_num,num_days)
 
     for i in range(wanted_num):
         for j in range(num_days):
@@ -109,19 +121,21 @@ def main():
 
     sorted_country_list = sorted(sorted_country,key=lambda l:float(l[1][-1]), reverse=True)
 
-    wanted = []
-    for i in range(10):
-        wanted.append(sorted_country_list[i][0])
+    #wanted = []
+    #for i in range(5):
+    #    wanted.append(sorted_country_list[i][0])
 
-    print('wanted',wanted)   
-    wanted_num = np.size(wanted)
-    wanted_index = [0]*wanted_num
-    wanted_fit_param = np.zeros((wanted_num,3))
+   # wanted = ["China","Italy","US"]
+
+    #global wanted_num   
+    #wanted_num = np.size(wanted)
+    #global wanted_index 
+    #wanted_index = [0]*wanted_num
+    #global wanted_fit_param
+    #wanted_fit_param = np.zeros((wanted_num,3))
 
     # determine index of wanted countries from total array
     get_country_index(num_countries)
-
-    print('index',wanted_index)
 
     # resize data to start at similar times
     rates_resize = get_same_start(country_rates,num_days,200)
@@ -143,7 +157,7 @@ def main():
             title = ['Confirmed Cases','Days','Num Affected',wanted[i]]
             pl.scatter_plot((x[i]),y[i],title,'.')
             if type_val[0] == 2:
-                num_sim = 50
+                num_sim = 30
                 modelPredictions = pl.logistic((range(num_sim)), *wanted_fit_param[i,:])
                 pl.scatter_plot(range(num_sim),modelPredictions,title,'-')
         plt.show()
@@ -168,13 +182,27 @@ def main():
     sorted_state_list = sorted(state_list,key=lambda l:float(l[2][-1]), reverse=True)
 
     if type_val[1] == 1:
-        fig, ax = plt.subplots()
-        for i in range(10): 
-            title = ['Confirmed Cases','Days','Num Affected',sorted_state_list[i][0]]
-            x = range(num_days)
-            y = np.array(sorted_state_list[i][2], dtype=np.float) #/ wanted_pop_density[1]
-            pl.scatter_plot(x,y,title,'-')
-        plt.show()
+        if 1==1:
+            wanted_state = ["Colorado","Oklahoma","Arkansas"]
+            fig, ax = plt.subplots()
+            for i in range(50):
+                if sorted_state_list[i][0] in wanted_state:
+                    title = ['Confirmed Cases','Days','Num Affected',sorted_state_list[i][0]]
+                    x = range(num_days)
+                    y = np.array(sorted_state_list[i][2], dtype=np.float) #/ wanted_pop_density[1]
+                    pl.scatter_plot(x,y,title,'-')
+            plt.show()
+
+
+        if 1==0:
+            fig, ax = plt.subplots()
+            for i in range(10): 
+                title = ['Confirmed Cases','Days','Num Affected',sorted_state_list[i][0]]
+                x = range(num_days)
+                y = np.array(sorted_state_list[i][2], dtype=np.float) #/ wanted_pop_density[1]
+                pl.scatter_plot(x,y,title,'-')
+            plt.show()
+
 
 #======================================================================================================#
 
